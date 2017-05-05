@@ -4,8 +4,12 @@ class SessionsController < ApplicationController
   end
 
   def create
-    session = session_params(:name, :password)
-    if session[:name].present? && session[:password].present?
+    if params[:user][:name].present? && params[:user][:password].present?
+      user = User.find_by(name: params[:user][:name])
+        .try(:authenticate, params[:user][:password])
+    end
+    if !!user
+      session[:user_id] = user.id
       redirect_to welcome_path
     else
       render :new
@@ -13,15 +17,9 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    if session[:name].present? || session[:password].present?
-      session.clear
+    if session[:user_id].present?
+      session[:user_id] = nil
     end
-      redirect_to login_path
-  end
-
-  private
-
-  def session_params(*args)
-    params.require(:session).permit(*args)
+    redirect_to login_path
   end
 end
